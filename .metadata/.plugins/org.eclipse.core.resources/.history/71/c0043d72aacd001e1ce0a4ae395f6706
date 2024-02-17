@@ -1,0 +1,70 @@
+
+/**
+ * main.c
+ */
+#include "F28x_Project.h"
+#include "driverlib.h"
+#include "device.h"
+
+//#define GPIO
+#define GPIO_BTN
+// Connect GPIO0 -> GPIO1
+
+
+void Init_GPIO();
+
+
+int main(void)
+{
+    InitSysCtrl();  // CLOCK
+    InitGpio();     //
+
+    Init_GPIO();
+
+    while(1){
+#ifdef GPIO
+        GpioDataRegs.GPATOGGLE.bit.GPIO31 = 1; // Toggle BLUE LED
+        GpioDataRegs.GPBTOGGLE.bit.GPIO34 = 1; // Toggle RED LED
+        DELAY_US(500000);
+#endif
+
+#ifdef GPIO_BTN
+
+#endif
+    }
+}
+
+void Init_GPIO(){
+    // BLUE LED
+    EALLOW;
+    GpioCtrlRegs.GPAMUX2.bit.GPIO31 = 0x0;      // GPIO
+    GpioCtrlRegs.GPAGMUX2.bit.GPIO31 = 0x0;     // GPIO
+    GpioCtrlRegs.GPADIR.bit.GPIO31  = 1;        // OUTPUT
+    GpioCtrlRegs.GPACSEL4.bit.GPIO31 = 0;       // CPU1
+
+    // RED LED
+    GpioCtrlRegs.GPBMUX1.bit.GPIO34 = 0x0;      // GPIO
+    GpioCtrlRegs.GPBGMUX1.bit.GPIO34 = 0x0;     // GPIO
+    GpioCtrlRegs.GPBDIR.bit.GPIO34  = 1;        // OUTPUT
+    GpioCtrlRegs.GPBCSEL1.bit.GPIO34 = 0;       // CPU1
+
+    // GPIO0
+    GpioCtrlRegs.GPAMUX1.bit.GPIO0 = 0x0;      // GPIO
+    GpioCtrlRegs.GPAGMUX1.bit.GPIO0 = 0x0;     // GPIO
+    GpioCtrlRegs.GPADIR.bit.GPIO0  = 1;        // OUTPUT
+    GpioCtrlRegs.GPACSEL1.bit.GPIO0 = 0;       // CPU1
+
+    // GPIO1
+    GpioCtrlRegs.GPAMUX1.bit.GPIO1 = 0x0;      // GPIO
+    GpioCtrlRegs.GPAGMUX1.bit.GPIO1 = 0x0;     // GPIO
+    GpioCtrlRegs.GPADIR.bit.GPIO1  = 1;        // OUTPUT
+    GpioCtrlRegs.GPACSEL1.bit.GPIO1 = 0;       // CPU1
+
+    GpioCtrlRegs.GPACTRL.bit.QUALPRD0 = 0xFF;  // 255
+    GpioCtrlRegs.GPACSEL1.bit.GPIO1   = 0x10;  // 6 Sample
+
+    EDIS;
+
+
+
+}

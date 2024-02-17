@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Delete resource &apos;TEMPLATE_VER01/2837x_FLASH_lnk_cpu1.cmd&apos;" deleteContents="false" description="Delete resource &apos;TEMPLATE_VER01/2837x_FLASH_lnk_cpu1.cmd&apos;" element1="/TEMPLATE_VER01/2837x_FLASH_lnk_cpu1.cmd" flags="7" id="org.eclipse.ltk.core.refactoring.delete.resources" resources="1" stamp="1708181791649"/>
+</session>

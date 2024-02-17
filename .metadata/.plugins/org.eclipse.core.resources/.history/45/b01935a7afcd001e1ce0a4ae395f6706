@@ -1,0 +1,138 @@
+
+/**
+ * main.c
+ */
+#include "F28x_Project.h"
+#include "driverlib.h"
+#include "device.h"
+
+//#define GPIO
+//#define GPIO_BTN // Connect GPIO0 - > GPIO1
+bool GPIO1_STATE = 0;
+
+#define MCP4921
+
+#define CSA(x)      (x ? (GpioDataRegs.GPBSET.bit.GPIO63 = 1): (GpioDataRegs.GPBCLEAR.bit.GPIO63 = 1))
+#define CSB(x)      (x ? (GpioDataRegs.GPCSET.bit.GPIO64 = 1): (GpioDataRegs.GPCCLEAR.bit.GPIO64 = 1))
+#define CSC(x)      (x ? (GpioDataRegs.GPASET.bit.GPIO26 = 1): (GpioDataRegs.GPACLEAR.bit.GPIO26 = 1))
+#define CLK(x)      (x ? (GpioDataRegs.GPASET.bit.GPIO27 = 1): (GpioDataRegs.GPACLEAR.bit.GPIO27 = 1))
+#define DATA(x)     (x ? (GpioDataRegs.GPASET.bit.GPIO25 = 1): (GpioDataRegs.GPACLEAR.bit.GPIO25 = 1))
+
+uint16_t count = 0;
+
+void SEND_DAC(uint16_t value);
+void Init_GPIO();
+
+int main(void)
+{
+    InitSysCtrl();  // CLOCK
+    InitGpio();     //
+
+    Init_GPIO();
+    CSA(1); CSB(1); CSC(1);
+    DATA(0);CLK(0);
+
+    while(1){
+#ifdef GPIO
+        GpioDataRegs.GPATOGGLE.bit.GPIO31 = 1; // Toggle BLUE LED
+//        GpioDataRegs.GPBTOGGLE.bit.GPIO34 = 1; // Toggle RED LED
+        DELAY_US(500000);
+#endif
+#ifdef GPIO_BTN
+        GPIO1_STATE = GpioDataRegs.GPADAT.bit.GPIO1; //
+        // Press - > 0
+        if(!GPIO1_STATE){
+            GpioDataRegs.GPACLEAR.bit.GPIO31 = 1;       // Turn on led
+            GpioDataRegs.GPASET.bit.GPIO0 = 1;          // Release btn
+            DELAY_US(500000);
+        }else{
+            GpioDataRegs.GPASET.bit.GPIO31 = 1;         // Turn off led
+            GpioDataRegs.GPACLEAR.bit.GPIO0 = 1;          // Release btn
+            DELAY_US(500000);
+
+        }
+#endif
+#ifdef MCP4921
+        count+=10; count%=4096; // 0 -> 4095
+        CSA(0);
+        SEND_DAC(count);
+        CSA(1);
+#endif
+    }
+}
+
+void SEND_DAC(uint16_t value){
+    value = (value&0x0fff)|0x7000;
+    uint16_t __ibit;
+    for(__ibit = 0x8000 ; __ibit > 0; __ibit>>=1){
+        DATA(__ibit&value);
+        CLK(1);CLK(0);
+    }
+}
+
+void Init_GPIO(){
+    // BLUE LED
+    EALLOW;
+    GpioCtrlRegs.GPAMUX2.bit.GPIO31 = 0x0;      // GPIO
+    GpioCtrlRegs.GPAGMUX2.bit.GPIO31 = 0x0;     // GPIO
+    GpioCtrlRegs.GPADIR.bit.GPIO31  = 1;        // OUTPUT
+    GpioCtrlRegs.GPACSEL4.bit.GPIO31 = 0;       // CPU1
+
+    // RED LED
+    GpioCtrlRegs.GPBMUX1.bit.GPIO34 = 0x0;      // GPIO
+    GpioCtrlRegs.GPBGMUX1.bit.GPIO34 = 0x0;     // GPIO
+    GpioCtrlRegs.GPBDIR.bit.GPIO34  = 1;        // OUTPUT
+    GpioCtrlRegs.GPBCSEL1.bit.GPIO34 = 0;       // CPU1
+
+    // GPIO0
+    GpioCtrlRegs.GPAMUX1.bit.GPIO0 = 0x0;      // GPIO
+    GpioCtrlRegs.GPAGMUX1.bit.GPIO0 = 0x0;     // GPIO
+    GpioCtrlRegs.GPADIR.bit.GPIO0  = 1;        // OUTPUT
+    GpioCtrlRegs.GPACSEL1.bit.GPIO0 = 0;       // CPU1
+
+    // GPIO1
+    GpioCtrlRegs.GPAMUX1.bit.GPIO1 = 0x0;      // GPIO
+    GpioCtrlRegs.GPAGMUX1.bit.GPIO1 = 0x0;     // GPIO
+    GpioCtrlRegs.GPADIR.bit.GPIO1  = 0;        // INPUT
+    GpioCtrlRegs.GPACSEL1.bit.GPIO1 = 0;       // CPU1
+
+    GpioCtrlRegs.GPACTRL.bit.QUALPRD0 = 0xff;  // 255
+    GpioCtrlRegs.GPACSEL1.bit.GPIO0   = 0x10;   // 6 sample
+
+    /*
+     * Sampling period
+     * Tsp = 2*QUALPRD/Fsys = 2*255/200Mhz = 2.55us
+     * Sampling Window
+     * Tsw = 5*Tsp  = 12.75us
+     */
+
+    // CSC
+    GpioCtrlRegs.GPAMUX2.bit.GPIO26 = 0x0;      // GPIO
+    GpioCtrlRegs.GPAGMUX2.bit.GPIO26 = 0x0;     // GPIO
+    GpioCtrlRegs.GPADIR.bit.GPIO26  = 1;        // OUTPUT
+    GpioCtrlRegs.GPACSEL4.bit.GPIO26 = 0;       // CPU1
+    // CLK
+    GpioCtrlRegs.GPAMUX2.bit.GPIO27 = 0x0;      // GPIO
+    GpioCtrlRegs.GPAGMUX2.bit.GPIO27 = 0x0;     // GPIO
+    GpioCtrlRegs.GPADIR.bit.GPIO27  = 1;        // OUTPUT
+    GpioCtrlRegs.GPACSEL4.bit.GPIO27 = 0;       // CPU1
+    // DATA
+    GpioCtrlRegs.GPAMUX2.bit.GPIO25 = 0x0;      // GPIO
+    GpioCtrlRegs.GPAGMUX2.bit.GPIO25 = 0x0;     // GPIO
+    GpioCtrlRegs.GPADIR.bit.GPIO25  = 1;        // OUTPUT
+    GpioCtrlRegs.GPACSEL4.bit.GPIO25 = 0;       // CPU1
+
+    // CSA
+    GpioCtrlRegs.GPBMUX2.bit.GPIO63 = 0x0;      // GPIO
+    GpioCtrlRegs.GPBGMUX2.bit.GPIO63 = 0x0;     // GPIO
+    GpioCtrlRegs.GPBDIR.bit.GPIO63  = 1;        // OUTPUT
+    GpioCtrlRegs.GPBCSEL4.bit.GPIO63 = 0;       // CPU1
+    // CSB
+    GpioCtrlRegs.GPCMUX1.bit.GPIO64 = 0x0;      // GPIO
+    GpioCtrlRegs.GPCGMUX1.bit.GPIO64 = 0x0;     // GPIO
+    GpioCtrlRegs.GPCDIR.bit.GPIO64  = 1;        // OUTPUT
+    GpioCtrlRegs.GPCCSEL1.bit.GPIO64 = 0;       // CPU1
+    EDIS;
+}
+
+

@@ -36,10 +36,10 @@ const uint16_t PHASE_A[200] = {
 
 
 //#define GPIO
-//#define GPIO_BTN // Connect GPIO0 - > GPIO1
+#define GPIO_BTN // Connect GPIO0 - > GPIO1
 bool GPIO1_STATE = 0;
 
-#define MCP4921
+//#define MCP4921
 
 #define CSA(x)      (x ? (GpioDataRegs.GPBSET.bit.GPIO63 = 1): (GpioDataRegs.GPBCLEAR.bit.GPIO63 = 1))
 #define CSB(x)      (x ? (GpioDataRegs.GPCSET.bit.GPIO64 = 1): (GpioDataRegs.GPCCLEAR.bit.GPIO64 = 1))
@@ -58,9 +58,8 @@ int main(void)
     InitGpio();     //
 
     Init_GPIO();
-    CSA(1); CSB(1); CSC(1);
-    DATA(0);CLK(0);
-
+//    CSA(1); CSB(1); CSC(1);
+//    DATA(0);CLK(0);
     while(1){
 #ifdef GPIO
         GpioDataRegs.GPATOGGLE.bit.GPIO31 = 1; // Toggle BLUE LED
@@ -78,7 +77,6 @@ int main(void)
             GpioDataRegs.GPASET.bit.GPIO31 = 1;         // Turn off led
             GpioDataRegs.GPACLEAR.bit.GPIO0 = 1;          // Release btn
             DELAY_US(500000);
-
         }
 #endif
 #ifdef MCP4921
@@ -126,16 +124,16 @@ void Init_GPIO(){
     GpioCtrlRegs.GPADIR.bit.GPIO1  = 0;        // INPUT
     GpioCtrlRegs.GPACSEL1.bit.GPIO1 = 0;       // CPU1
 
-    GpioCtrlRegs.GPACTRL.bit.QUALPRD0 = 0xff;  // 255
-    GpioCtrlRegs.GPACSEL1.bit.GPIO0   = 0x10;   // 6 sample
+    GpioCtrlRegs.GPACTRL.bit.QUALPRD0 = 0xff; // Period 255
+    GpioCtrlRegs.GPAQSEL1.bit.GPIO1   = 0x2;    // 6 sample
+    GpioCtrlRegs.GPAPUD.bit.GPIO1     = 0;      //Pull up resister
 
     /*
      * Sampling period
-     * Tsp = 2*QUALPRD/Fsys = 2*255/200Mhz = 2.55us
-     * Sampling Window
-     * Tsw = 5*Tsp  = 12.75us
+     * Tsp = 2*QUALPRD0/F_sys = 2*255/200Mhz = 2.55us
+     * Sampling window
+     * Tsw = 5*Tsp = 12.75us
      */
-
     // CSC
     GpioCtrlRegs.GPAMUX2.bit.GPIO26 = 0x0;      // GPIO
     GpioCtrlRegs.GPAGMUX2.bit.GPIO26 = 0x0;     // GPIO
@@ -162,6 +160,7 @@ void Init_GPIO(){
     GpioCtrlRegs.GPCGMUX1.bit.GPIO64 = 0x0;     // GPIO
     GpioCtrlRegs.GPCDIR.bit.GPIO64  = 1;        // OUTPUT
     GpioCtrlRegs.GPCCSEL1.bit.GPIO64 = 0;       // CPU1
+
     EDIS;
 }
 
